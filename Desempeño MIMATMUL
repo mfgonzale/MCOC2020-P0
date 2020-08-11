@@ -1,0 +1,125 @@
+def mimatmul(m1,m2):
+    r=[]
+    m=[]
+    for i in range(len(m1)):
+        for j in range(len(m2[0])):
+            sums=0
+            for k in range(len(m2)):
+                sums=sums+(m1[i][k]*m2[k][j])
+            r.append(sums)
+        m.append(r)
+        r=[]
+    return m
+
+
+
+
+from scipy import matrix, rand, savetxt
+from time import perf_counter
+import matplotlib.pyplot as plt
+import matplotlib.ticker as ticker
+import numpy as np
+from numpy import *
+from math import *
+from mimatmul import mimatmul
+
+
+Ns = [2, 5, 10, 12, 15, 20, 30, 40, 45, 50, 55, 60, 75, 100, 125, 160, 200,250, 350, 500, 600, 800, 1000, 2000, 5000, 10000]
+
+Ncorridas = 10
+
+
+for i in range(Ncorridas):
+    dts = []
+    mem = []
+    name = (f"matmul{i}.txt")
+    fid = open(name, "w")
+    for N in Ns:
+        
+        A = np.random.rand(N,N)
+        B = np.random.rand(N,N)
+        
+        t1 = perf_counter()
+        C = mimatmul(A,B)
+        t2 = perf_counter()
+        
+        dt = t2 - t1
+        
+        size = 3*(N**2)*8
+        
+        dts.append(dt)
+        mem.append(size)
+        
+        fid.write(f"{N} {dt} {size}\n")
+        
+        fid.flush()
+        
+    fid.close()
+     
+
+j = 0
+matriz_N = []
+matriz_dt = []
+matriz_mem = []
+while j < 10:
+    with open(f'matmul{j}.txt','r') as f:
+        lista_N = []
+        lista_dt = []
+        lista_mem = []
+        for linea in f:
+            datos = linea.split(" ")
+            lista_N.append(float(datos[0]))
+            lista_dt.append(float(datos[1]))
+            lista_mem.append(float(datos[2]))
+        matriz_N.append(lista_N)
+        matriz_dt.append(lista_dt)
+        matriz_mem.append(lista_mem)
+        
+        f.close()
+    j+=1
+    
+
+    
+a = 0
+while a < 10:   
+        plt.plot(matriz_N[a],matriz_dt[a])
+        a+=1
+
+b = 0
+while b < 10:   
+        plt.plot(matriz_N[b],matriz_mem[b])
+        b+=1
+    
+    
+
+
+fig, ax = plt.subplots(2,1)
+    
+#1)
+ax[0].figure(1)
+ax[0].ylabel("Tiempo transcurrido")
+ax[0].title("Rendimiento A@B")
+ax[0].xscale("log")
+ax[0].yscale("log")
+ax[0].set_xticks([10,20,50,100,200,500,1000,2000,5000,10000,20000])
+ax[0].set_xticklabels(["","","","","","","","","","",""],rotation=45)
+ax[0].set_yticks([0.0001,0.001,0.01,0.1,1,10,60,600])
+ax[0].set_yticklabels(["0.1 ms","1 ms","10 ms","0.1 s","1 s","10 s","1 min","10 min"])
+ax[0].set_xlim(0,20000)
+ax[0].grid(True)
+
+#2)
+ax[1].figure(2)
+ax[1].xlabel("Tamaño matriz N")
+ax[1].ylabel("Uso memoria")
+ax[1].xscale("log")
+ax[1].yscale("log")
+
+ax[1].set_xticks([10,20,50,100,200,500,1000,2000,5000,10000,20000])
+ax[1].set_xticklabels([10,20,50,100,200,500,1000,2000,5000,10000,20000],rotation=45)
+ax[1].set_yticks([100,1000,10000,100000,1000000,10000000,100000000,1000000000])
+ax[1].set_yticklabels(["1 KB","10 KB","100 KB","1 MB","10 MB","100 MB","1 G","10 GB"])
+ax[1].set_xlim(0,20000)
+ax[1].grid(True)
+
+plt.show()
