@@ -55,7 +55,7 @@ for N in Ns:
           
     print("dts: ", dts)  
       
-    dts_mean = [np.mean(dts[:][j]) for j in range(len(files))]  
+    dts_mean = [np.mean(dts[:,j]) for j in range(len(files))]  
       
     print("dts_mean: ", dts_mean)  
       
