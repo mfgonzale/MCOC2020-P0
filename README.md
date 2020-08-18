@@ -804,3 +804,309 @@ ax[1].grid(True)
 plt.tight_layout()
 plt.savefig("timing_inv_caso_3_longdouble.png")
 plt.show()  
+
+
+#Entrega 5:  
+
+from time import perf_counter  
+import scipy as sp  
+import scipy.linalg as spLinalg  
+import numpy as np  
+from numpy import float32, zeros  
+import matplotlib.pyplot as plt  
+  
+def laplaciano(N, dtype=float32):  
+    matriz = zeros((N,N), dtype = dtype)  
+    for i in range(N):  
+        for j in range(N):  
+            if i==j:  
+                matriz[i,j] = 2  
+            if i+1==j:  
+                matriz[i,j] = -1  
+            if i-1==j:  
+                matriz[i,j] = -1  
+    return(matriz)  
+  
+#Tamaños matrices   
+Ns = [2,5,10,12,15,20,30,40,45,50,55,60,75,100,125,160,200,250,350,500,600,800,1000]  
+  
+Ncorridas = 10  
+  
+names = ["A_invB_inv.txt", "A_invB_npSolve.txt"]  
+  
+files = [open(name, "w") for name in names]  
+  
+for N in Ns:  
+    dts = np.zeros((Ncorridas, len(files)))  
+    print (f"N = {N}")  
+      
+    for i in range(Ncorridas):  
+        print(f"i = {i}")  
+          
+        #Invirtieno y multiplicando  
+        A = laplaciano(N)  
+        B = np.ones(N)  
+        t1 = perf_counter()  
+        A_inv = np.linalg.inv(A)  
+        A_invB = A_inv@B  
+        t2 = perf_counter()  
+        dt = t2 - t1  
+        dts[i][0] = dt  
+          
+          
+        #Ocupando np.linalg.solve(A, B)  
+        A = laplaciano(N)  
+        B = np.ones(N)  
+        t1 = perf_counter()  
+        A_invB = np.linalg.solve(A, B)  
+        t2 = perf_counter()  
+        dt = t2 - t1  
+        dts[i][1] = dt  
+          
+    print("dts: ", dts)  
+      
+    dts_mean = [np.mean(dts[:,j]) for j in range(len(files))]  
+      
+    print("dts_mean: ", dts_mean)  
+      
+    #Escribo en el archivo de texto los resultados  
+    for j in range(len(files)):  
+        files[j].write(f"{N} {dts_mean[j]}\n")  
+        files[j].flush()  
+[file.close() for file in files]  
+  
+     
+def plotting(names):  
+      
+    xtks = [10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000]  
+      
+    ytks1 = [0.1e-3, 1e-3, 1e-2, 0.1, 1., 10., 60, 60 * 10]  
+    ytklabs1 = ["0.1 ms","1 ms","10 ms","0.1 s","1 s","10 s","1 min","10 min"]  
+      
+    plt.figure()  
+      
+      
+    for name in names:  
+        data = np.loadtxt(name)  
+        Ns = data[:, 0]  
+        dts = data[:, 1]  
+          
+        print("Ns: ", Ns)  
+        print("dts: ", dts)  
+          
+        plt.loglog(Ns, dts.T, "-o", label=name)  
+        plt.ylabel("Tiempo transcurrido (s)")  
+        plt.xlabel("Tamaño matriz $N$")  
+        plt.grid(True)  
+        plt.xticks(xtks,xtks,rotation=45)  
+        plt.yticks(ytks1,ytklabs1)  
+          
+    plt.tight_layout()  
+    plt.legend()  
+    plt.show()  
+    plt.savefig("plot.png")  
+      
+names = ["A_invB_inv.txt", "A_invB_npSolve.txt"]  
+plotting(names)  
+
+#Archivos de texto entrega 5:  
+
+A_invB_inv:  
+  
+  
+2 0.0001245499997821753  
+5 9.270000009564683e-05  
+10 0.00012679999963438604  
+12 0.00011475000064820051  
+15 0.0001687499998297426  
+20 8.915000034903642e-05  
+30 0.0001830000010158983  
+40 0.0002889500001401757  
+45 0.00024109999958454864  
+50 0.00032929999997577397  
+55 0.001593900000443682  
+60 0.0005154999998921994  
+75 0.0005118000008224044  
+100 0.0010457999997015577  
+125 0.001239299999724608  
+160 0.0019525499992596451  
+200 0.01344370000060735  
+250 0.003025700000762299  
+350 0.0073021499993046746  
+500 0.02221654999993916  
+600 0.030557449999832897  
+800 0.05846744999962539  
+1000 0.08278839999911725  
+  
+  
+A_invB_npSolve:  
+  
+  
+2 8.444999912171625e-05  
+5 6.865000068501104e-05  
+10 0.00011014999927283498  
+12 8.615000024292385e-05  
+15 0.00040439999884256395  
+20 5.580000015470432e-05  
+30 0.0009767999999894528  
+40 0.0002287500001330045  
+45 0.0003261499996369821  
+50 0.00023194999994302634  
+55 0.00030605000029026996  
+60 0.0002678500004549278  
+75 0.0018878000000768225  
+100 0.0011091500000475207  
+125 0.0008554499991078046  
+160 0.0009740000004967442  
+200 0.005398449999120203  
+250 0.0025776999991649063  
+350 0.008050350000303297  
+500 0.02073290000043926  
+600 0.020971549999558192  
+800 0.07227399999919726  
+1000 0.0813138000003164  
+
+
+
+#Entrega 6:  
+  
+from time import perf_counter  
+import scipy as sp  
+import scipy.linalg as spLinalg  
+import numpy as np  
+from numpy import float32, zeros  
+import matplotlib.pyplot as plt  
+from scipy import linalg  
+  
+def laplaciano(N, dtype=float32):  
+    matriz = zeros((N,N), dtype = dtype)  
+    for i in range(N):  
+        for j in range(N):  
+            if i==j:  
+                matriz[i,j] = 2  
+            if i+1==j:  
+                matriz[i,j] = -1  
+            if i-1==j:  
+                matriz[i,j] = -1  
+    return(matriz)  
+  
+#Tamaños matrices   
+Ns = [2,5,10,12,15,20,30,40,45,50,55,60,75,100,125,160,200,250,350,500,600,800,1000]  
+  
+Ncorridas = 10  
+  
+names = ["A_invB_inv.txt", "A_invB_npSolve.txt", "A_invB_spSolve.txt", "A_invB_spSolve_symmetric.txt", "A_invB_spSolve_pos.txt", "A_invB_spSolve_pos_overwrite.txt"]  
+  
+files = [open(name, "w") for name in names]  
+  
+for N in Ns:  
+    dts = np.zeros((Ncorridas, len(files)))  
+    print (f"N = {N}")   
+      
+    for i in range(Ncorridas):  
+        print(f"i = {i}")  
+          
+        #Invirtieno y multiplicando  
+        A = laplaciano(N)  
+        B = np.ones(N)  
+        t1 = perf_counter()  
+        A_inv = np.linalg.inv(A)  
+        A_invB = A_inv@B  
+        t2 = perf_counter()  
+        dt = t2 - t1  
+        dts[i][0] = dt  
+          
+          
+        #Ocupando np.linalg.solve(A, B)  
+        A = laplaciano(N)  
+        B = np.ones(N)  
+        t1 = perf_counter()  
+        A_invB = np.linalg.solve(A, B)  
+        t2 = perf_counter()  
+        dt = t2 - t1  
+        dts[i][1] = dt  
+          
+        #Ocupando sp.linalg.solve  
+        A = laplaciano(N)  
+        B = np.ones(N)  
+        t1 = perf_counter()  
+        A_invB = linalg.solve(A, B)  
+        t2 = perf_counter()  
+        dt = t2 - t1  
+        dts[i][2] = dt  
+          
+        #Ocupando symmetric=True  
+        A = laplaciano(N)  
+        B = np.ones(N)  
+        t1 = perf_counter()  
+        A_invB = linalg.solve(A, B, sym_pos=True)  
+        t2 = perf_counter()  
+        dt = t2 - t1  
+        dts[i][3] = dt  
+          
+        #Ocupando assume_a = ‘pos’   
+        A = laplaciano(N)  
+        B = np.ones(N)  
+        t1 = perf_counter()  
+        A_invB = linalg.solve(A, B, assume_a="pos")  
+        t2 = perf_counter()  
+        dt = t2 - t1  
+        dts[i][4] = dt  
+          
+        #Ocupando overwrite=True  
+        A = laplaciano(N)  
+        B = np.ones(N)  
+        t1 = perf_counter()  
+        A_invB = linalg.solve(A, B, assume_a="pos", overwrite_a=True)  
+        t2 = perf_counter()  
+        dt = t2 - t1  
+        dts[i][5] = dt  
+          
+    print("dts: ", dts)  
+      
+    dts_mean = [np.mean(dts[:,j]) for j in range(len(files))]  
+      
+    print("dts_mean: ", dts_mean)  
+      
+    #Escribo en el archivo de texto los resultados  
+    for j in range(len(files)):  
+        files[j].write(f"{N} {dts_mean[j]}\n")  
+        files[j].flush()  
+[file.close() for file in files]  
+  
+     
+def plotting(names):  
+      
+    xtks = [10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000]  
+      
+    ytks1 = [0.1e-3, 1e-3, 1e-2, 0.1, 1., 10., 60, 60 * 10]  
+    ytklabs1 = ["0.1 ms","1 ms","10 ms","0.1 s","1 s","10 s","1 min","10 min"]  
+      
+    plt.figure()  
+      
+      
+    for name in names:  
+        data = np.loadtxt(name)  
+        Ns = data[:, 0]  
+        dts = data[:, 1]  
+          
+        print("Ns: ", Ns)  
+        print("dts: ", dts)  
+          
+        plt.loglog(Ns, dts.T, "-o", label=name)  
+        plt.ylabel("Tiempo transcurrido (s)")  
+        plt.xlabel("Tamaño matriz $N$")  
+        plt.grid(True)  
+        plt.xticks(xtks,xtks,rotation=45)  
+        plt.yticks(ytks1,ytklabs1)  
+          
+    plt.tight_layout()  
+    plt.legend()  
+    plt.show()  
+    plt.savefig("plot.png")  
+      
+names = ["A_invB_inv.txt", "A_invB_npSolve.txt", "A_invB_spSolve.txt", "A_invB_spSolve_symmetric.txt", "A_invB_spSolve_pos.txt", "A_invB_spSolve_pos_overwrite.txt"]  
+plotting(names)  
+  
+  Se puede notar que el desempeño de la primera función es mejor por estar recien empezando el procesador a correr el codigo, y a medida que sigue tomando las otras funciones va bajando en general levemente su desempeño.
+
