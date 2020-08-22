@@ -1110,3 +1110,234 @@ plotting(names)
   
   Se puede notar que el desempeño de la primera función es mejor por estar recien empezando el procesador a correr el codigo, y a medida que sigue tomando las otras funciones va bajando en general levemente su desempeño.  
 
+
+Entrega 7:  
+Matrices dispersas y complejidad computacional  
+  
+from numpy import *  
+from time import perf_counter  
+from scipy.linalg import solve  
+from matplotlib.pyplot import spy  
+import matplotlib.pyplot as plt  
+from numpy import float32, zeros, ones  
+from scipy.sparse import lil_matrix  
+from scipy import linalg, zeros  
+import numpy as np  
+from scipy.sparse import csr_matrix  
+from scipy.sparse.linalg import spsolve  
+from scipy.sparse.linalg import inv  
+import scipy as sp  
+  
+  
+Ns = [100, 200, 400, 800, 1000]  
+Ncorridas = 10  
+  
+def laplaciano_llena(N, dtype=float32):  
+    matriz = np.zeros((N,N), dtype = dtype)  
+    for i in range(N):  
+        for j in range(N):  
+            if i==j:  
+                matriz[i,j] = 2  
+            if i+1==j:  
+                matriz[i,j] = -1  
+            if i-1==j:  
+                matriz[i,j] = -1  
+    return(matriz)  
+  
+  
+def laplaciano_dispersa(N, dtype=float32):  
+    matriz = lil_matrix((N,N), dtype = dtype) #es como decir zeros   
+    for i in range(N):  
+        for j in range(N):  
+            if i==j:  
+                matriz[i,j] = 2  
+            if i+1==j:  
+                matriz[i,j] = -1  
+            if i-1==j:  
+                matriz[i,j] = -1  
+    return(matriz)  
+   
+names = ["Caso1_matriz_llena.txt", "Caso1_matriz_dispersa.txt", "Caso2_matriz_llena.txt", "Caso2_matriz_dispersa.txt", "Caso3_matriz_llena.txt", "Caso3_matriz_dispersa.txt"]  
+  
+files = [open(name, "w") for name in names]  
+  
+for N in Ns:  
+    dts1 = np.zeros((Ncorridas, len(files)))  
+    dts2 = np.zeros((Ncorridas, len(files)))  
+    print (f"N = {N}")  
+      
+    for i in range(Ncorridas):  
+        print(f"i = {i}")  
+        #Caso 1  
+        #Matrices llenas  
+  
+        t1 = perf_counter()  
+      
+        A = laplaciano_llena(N)  
+        B = laplaciano_llena(N)  
+          
+        t2 = perf_counter()  
+          
+        C = A@B  
+      
+        t3 = perf_counter()  
+              
+        dts1[i][0] = t2 - t1  
+        dts2[i][0] = t3 - t2  
+          
+        #Matriz dispersa  
+          
+        t1 = perf_counter()  
+          
+        A_lil = laplaciano_dispersa(N)  
+        A_csr = csr_matrix(A_lil)  
+        B_lil = laplaciano_dispersa(N)  
+        B_csr = csr_matrix(B_lil)  
+          
+        t2 = perf_counter()  
+          
+        C = A_csr@B_csr  
+      
+        t3 = perf_counter()  
+          
+        dts1[i][1] = t2 - t1  
+        dts2[i][1] = t3 - t2  
+          
+          
+        #Caso 2:  
+        #Matriz llena  
+          
+        #print(f"N = {N}")  
+        t1 = perf_counter()  
+  
+        A = laplaciano_llena(N)  
+        b = ones(N)  
+      
+        t2 = perf_counter()  
+      
+        x = solve(A,b)  
+  
+        t3 = perf_counter()  
+      
+        dts1[i][2] = t2 - t1  
+        dts2[i][2] = t3 - t2  
+          
+        #matriz dispersa  
+          
+        t1 = perf_counter()  
+        A_lil = laplaciano_dispersa(N)  
+        A_csr = csr_matrix(A_lil)  
+        b = ones(N)  
+          
+        t2 = perf_counter()  
+      
+        x = spsolve(A_csr,b)  
+  
+        t3 = perf_counter()  
+          
+        dts1[i][3] = t2 - t1  
+        dts2[i][3] = t3 - t2  
+          
+        #Caso 3  
+          
+        #Matriz llena  
+  
+        t1 = perf_counter()  
+        A = laplaciano_llena(N)  
+      
+        t2 = perf_counter()  
+      
+        A_inv = sp.linalg.inv(A)  
+  
+        t3 = perf_counter()  
+      
+        dts1[i][4] = t2 - t1  
+        dts2[i][4] = t3 - t2  
+          
+        #Matriz dispersa  
+          
+        t1 = perf_counter()  
+      
+        A_lil = laplaciano_dispersa(N)  
+        A_csr = csr_matrix(A_lil)  
+      
+        t2 = perf_counter()  
+      
+        A_inv = sp.sparse.linalg.inv(A_csr)  
+  
+        t3 = perf_counter()  
+      
+        dts1[i][5] = t2 - t1  
+        dts2[i][5] = t3 - t2  
+      
+    print("dts1: ", dts1)   
+    print("dts2: ", dts2)           
+    dts1_mean = [np.mean(dts1[:,j]) for j in range(len(files))] #promedio de cada columna  
+    dts2_mean = [np.mean(dts2[:,j]) for j in range(len(files))] #promedio de cada columna  
+     
+      
+    print("dts1_mean: ", dts1_mean)  
+    print("dts2_mean: ", dts2_mean)  
+    #Escribo en el archivo de texto los resultados  
+    for j in range(len(files)):  
+        files[j].write(f"{N} {dts1_mean[j]} {dts2_mean[j]}\n")  
+        files[j].flush()  
+[file.close() for file in files]  
+  
+  
+  
+def plotting(names):  
+      
+    plt.figure()  
+      
+      
+    for name in names:  
+        data = np.loadtxt(name)  
+        Ns = data[:, 0]  
+        dts1 = data[:, 1]  
+        dts2 = data[:, 2]  
+          
+        print("Ns: ", Ns)  
+        print("dts1: ", dts1)  
+        print("dts2: ", dts2)  
+          
+        fig, ax = plt.subplots(2,1)    
+  
+        a = 0  
+        while a < 5:     
+            ax[0].loglog(Ns[a],dts1[a],"-o")  
+            a+=1  
+  
+        b = 0  
+        while b < 5:     
+            ax[1].loglog(Ns[b],dts2[b],"-o")  
+            b+=1  
+          
+          
+        ax[0].set_ylabel("Tiempo de ensamblado (s)")  
+  
+        ax[0].set_xticks([10,20,50,100,200,500,1000,2000,5000,10000,20000])  
+        ax[0].set_xticklabels(["","","","","","","","","","",""],rotation=45)  
+        ax[0].set_yticks([0.0001,0.001,0.01,0.1,1,10,60,600])  
+        ax[0].set_yticklabels(["0.1 ms","1 ms","10 ms","0.1 s","1 s","10 s","1 min","10 min"])  
+        ax[0].set_xlim(10,20000)  
+        ax[0].grid(True)  
+          
+  
+        ax[1].set_ylabel("Tiempo de solucion (s)")  
+        ax[1].set_xlabel("Tamaño matriz $N$")  
+        ax[1].set_xticks([10,20,50,100,200,500,1000,2000,5000,10000,20000])  
+        ax[1].set_xticklabels(["10","20","50","100","200","500","1000","2000","5000","10000","20000"],rotation=45)  
+        ax[1].set_yticks([0.0001,0.001,0.01,0.1,1,10,60,600])  
+        ax[1].set_yticklabels(["0.1 ms","1 ms","10 ms","0.1 s","1 s","10 s","1 min","10 min"])  
+        ax[1].set_xlim(10,20000)  
+        ax[1].grid(True)  
+          
+    plt.tight_layout()  
+    plt.legend()  
+    plt.show()  
+    plt.savefig("matrices_llenas_y_dispersas.png")  
+      
+names = ["Caso1_matriz_llena.txt", "Caso1_matriz_dispersa.txt", "Caso2_matriz_llena.txt", "Caso2_matriz_dispersa.txt", "Caso3_matriz_llena.txt", "Caso3_matriz_dispersa.txt"]  
+plotting(names)  
+  
